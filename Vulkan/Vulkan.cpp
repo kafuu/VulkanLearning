@@ -2,6 +2,7 @@
 #include "SDL2/SDL_vulkan.h"
 #include <iostream>
 #include <vector>
+#include "toy2d.hpp"
 
 int main(int argc, char** argv) {
     SDL_Init(SDL_INIT_EVERYTHING);
@@ -18,7 +19,9 @@ int main(int argc, char** argv) {
     bool shouldClose = false;
     SDL_Event event;
 
+    toy2d::Init();
 
+    
     while (!shouldClose) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
@@ -27,6 +30,7 @@ int main(int argc, char** argv) {
         }
     }
 
+    toy2d::Quit();
 
     SDL_DestroyWindow(window);
     SDL_Quit();
