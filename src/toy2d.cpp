@@ -2,8 +2,8 @@
 
 namespace toy2d{
 
-	void Init() {
-		Context::Init();
+	void Init(std::vector<const char*> extensions,CreateSurfaceFunc func) {
+		Context::Init(extensions,func);
 	}
 	void Quit() {
 		Context::Quit();

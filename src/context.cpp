@@ -3,8 +3,8 @@
 namespace toy2d {
 	std::unique_ptr<Context> Context::instance_ = nullptr;
 
-	void Context::Init() {
-		instance_.reset(new Context);
+	void Context::Init(std::vector<const char*> extensions,CreateSurfaceFunc func) {
+		instance_.reset(new Context(extensions,func));
 	}
 
 	void Context::Quit() {
@@ -15,10 +15,11 @@ namespace toy2d {
 		return *instance_;
 	}
 
-	Context::Context() {
-		createInstance();
+	Context::Context(std::vector<const char*> extensions,CreateSurfaceFunc func) {
+		createInstance(extensions);
 		pickupPhysicalDevice();
 		queryQueueFamilyIndices();
+		surface = func(instance);
 		createDevice();
 		getQueues();
 	}
@@ -28,14 +29,16 @@ namespace toy2d {
 		instance.destroy();
 	}
 	//创建instance
-	void Context::createInstance() {
+	void Context::createInstance(std::vector<const char*> extensions) {
 		vk::InstanceCreateInfo createInfo;//创建instance的info:结构体
 		vk::ApplicationInfo appInfo;
+		//验证层
 		std::vector<const char*> layers = { "VK_LAYER_KHRONOS_validation" };
 
 		appInfo.setApiVersion(VK_API_VERSION_1_3);
 		createInfo.setPApplicationInfo(&appInfo)
-			.setPEnabledLayerNames(layers);
+			.setPEnabledLayerNames(layers)
+			.setPEnabledExtensionNames(extensions);
 
 		instance = vk::createInstance(createInfo);
 
