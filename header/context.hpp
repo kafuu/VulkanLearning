@@ -28,6 +28,7 @@ namespace toy2d {
 		struct  QueueFamilyIndices final
 		{
 			std::optional<uint32_t> graphicsQuene;
+			std::optional<uint32_t> presentQuene;
 		};
 		QueueFamilyIndices queueFamilyIndices;
 
