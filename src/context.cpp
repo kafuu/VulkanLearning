@@ -12,14 +12,24 @@ namespace toy2d {
 	}
 
 	Context& Context::GetInstance() {
+		assert(instance_);
 		return *instance_;
+	}
+
+	void Context::InitSwapchain(int w,int h) {
+
+		swapchain.reset(new Swapchain(w, h));
+	}
+
+	void Context::DestroySwapchain() {
+		swapchain.reset();//先销毁swapchain在销毁device
 	}
 
 	Context::Context(std::vector<const char*> extensions,CreateSurfaceFunc func) {
 		createInstance(extensions);
 		pickupPhysicalDevice();
-		queryQueueFamilyIndices();
 		surface = func(instance);
+		queryQueueFamilyIndices();
 		createDevice();
 		getQueues();
 	}
@@ -51,17 +61,33 @@ namespace toy2d {
 	};
 	//创建逻辑设备
 	void Context::createDevice() {
+		std::array extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
 		vk::DeviceCreateInfo createInfo;
-		vk::DeviceQueueCreateInfo queneInfo;
+		std::vector <vk::DeviceQueueCreateInfo> queueCreateInfos;
 		float priorities = 1.0f;
+		if (queueFamilyIndices.presentQuene.value() == queueFamilyIndices.graphicsQuene.value()) {//如果两个queue是同一个
+			vk::DeviceQueueCreateInfo queueCreateInfo;
+			queueCreateInfo.setPQueuePriorities(&priorities)//优先级
+				.setQueueCount(1)//队列数
+				.setQueueFamilyIndex(queueFamilyIndices.graphicsQuene.value());//不同的设备不同，因此需要查询
+			queueCreateInfos.push_back(std::move(queueCreateInfo));
+		}
+		else {
+			vk::DeviceQueueCreateInfo queueCreateInfo;
+			queueCreateInfo.setPQueuePriorities(&priorities)//优先级
+				.setQueueCount(1)//队列数
+				.setQueueFamilyIndex(queueFamilyIndices.graphicsQuene.value());//不同的设备不同，因此需要查询
+			queueCreateInfos.push_back(queueCreateInfo);
 
-		queneInfo.setPQueuePriorities(&priorities)//优先级
-			.setQueueCount(1)//队列数
-			.setQueueFamilyIndex(queueFamilyIndices.graphicsQuene.value());//不同的设备不同，因此需要查询
-		createInfo.setQueueCreateInfos(queneInfo);//命令队列，用于从device到phydevice传指令
-
+			queueCreateInfo.setPQueuePriorities(&priorities)
+				.setQueueCount(1)
+				.setQueueFamilyIndex(queueFamilyIndices.presentQuene.value());
+			queueCreateInfos.push_back(queueCreateInfo);
+		}
+		createInfo.setQueueCreateInfos(queueCreateInfos)//命令队列，用于从device到phydevice传指令
+			.setPEnabledExtensionNames(extensions);
 		device = phyDevice.createDevice(createInfo);
-	
 	};
 	//请求到底哪个图形队列是命令队列
 	void Context::queryQueueFamilyIndices() {
@@ -69,14 +95,20 @@ namespace toy2d {
 		for (int i = 0; i < properties.size();i++) {
 			auto property = properties[i];
 			if (property.queueFlags | vk::QueueFlagBits::eGraphics) {
-				queueFamilyIndices.graphicsQuene = i;
+				queueFamilyIndices.graphicsQuene = i; 
+			}
+			if (phyDevice.getSurfaceSupportKHR(i, surface)) {
+				queueFamilyIndices.presentQuene = i;
+			}
+			if (queueFamilyIndices) {
 				break;
 			}
 		}
 	}
 	//
 	void Context::getQueues() {
-		graphicsQueue = device.getQueue(queueFamilyIndices.graphicsQuene.value(),0);//第二个参数是拿哪一个队列，因为创建了一个所以是0
+		graphicsQueue = device.getQueue(queueFamilyIndices.graphicsQuene.value(),0);
+		presentQueue = device.getQueue(queueFamilyIndices.presentQuene.value(),0);
 
 	}
 }

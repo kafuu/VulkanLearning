@@ -26,15 +26,13 @@ int main(int argc, char** argv) {
 
 
 
-	toy2d::Init(extensions,
-		[&](vk::Instance instance) {
+	toy2d::Init(extensions,[&](vk::Instance instance) {
 			VkSurfaceKHR surface;
-			if (SDL_Vulkan_CreateSurface(window, instance, &surface))
-			{
-				throw std::runtime_error("can't create surface");
+			if (!SDL_Vulkan_CreateSurface(window, instance, &surface)) {
+				throw std::runtime_error("cant create surface");
 			}
 			return surface;
-		});
+		},1920,1080);
 
 
 	while (!shouldClose) {

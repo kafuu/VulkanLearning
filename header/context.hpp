@@ -6,6 +6,7 @@
 #include <iostream>
 #include<optional>
 #include<functional>
+#include "swapchain.hpp"
 
 
 namespace toy2d {
@@ -19,18 +20,27 @@ namespace toy2d {
 		static void Init(std::vector<const char*> extensions,CreateSurfaceFunc func);
 		static void Quit();
 		~Context();
+		void InitSwapchain(int w ,int h);
+		void DestroySwapchain();
 
 		vk::Instance instance;
 		vk::PhysicalDevice phyDevice;//物理设备
 		vk::Device device;//逻辑设备
 		vk::Queue graphicsQueue;
+		vk::Queue presentQueue;
 		vk::SurfaceKHR surface;
+		std::unique_ptr<Swapchain> swapchain;
 		struct  QueueFamilyIndices final
 		{
 			std::optional<uint32_t> graphicsQuene;
 			std::optional<uint32_t> presentQuene;
+
+			operator bool() const {
+				return graphicsQuene.has_value() && presentQuene.has_value();
+			}
 		};
 		QueueFamilyIndices queueFamilyIndices;
+
 
 	private:
 		Context(std::vector<const char*> extensions,CreateSurfaceFunc func);

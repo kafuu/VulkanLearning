@@ -7,6 +7,6 @@
 namespace toy2d{
 	//CreateSurfaceFunc函数模板，相当于一个类型
 	
-	void Init(std::vector<const char*> extensions,CreateSurfaceFunc func);
+	void Init(std::vector<const char*> extensions,CreateSurfaceFunc func,int w,int h);
 	void Quit();
 }
