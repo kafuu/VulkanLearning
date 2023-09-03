@@ -30,10 +30,15 @@ namespace toy2d {
 
 		swapchain = Context::GetInstance().device.createSwapchainKHR(createInfo);//在device上创建swapchain
 		  
+		getImages();
+		createImageViews();
 	}
 
 	Swapchain::~Swapchain() {
 		Context::GetInstance().device.destroySwapchainKHR(swapchain);
+		for (auto& view:imageViews) {
+			Context::GetInstance().device.destroyImageView(view);
+		}
 	}
 
 	void Swapchain::queryInfo(int w, int h) {
@@ -67,6 +72,34 @@ namespace toy2d {
 			}
 		}
 
+	}
+
+	void Swapchain::createImageViews() {
+		imageViews.resize(images.size());
+		for (int i = 0;i<images.size();i++) {
+			vk::ComponentMapping mapping;
+			vk::ImageViewCreateInfo createInfo;
+			vk::ImageSubresourceRange range;
+
+			range.setBaseMipLevel(0)//0级多级渐远纹理也就是图片本身
+				.setLevelCount(1)//一层渐远纹理
+				.setBaseArrayLayer(0)
+				.setLayerCount(1)
+				.setAspectMask(vk::ImageAspectFlagBits::eColor);
+
+
+			createInfo.setImage(images[i])
+				.setViewType(vk::ImageViewType::e2D)
+				.setComponents(mapping)
+				.setFormat(info.imageFormat.format)
+				.setSubresourceRange(range);
+
+			imageViews[i] = Context::GetInstance().device.createImageView(createInfo);
+		}
+	}
+
+	void Swapchain::getImages() {
+		images = Context::GetInstance().device.getSwapchainImagesKHR(swapchain);
 	}
 
 }
