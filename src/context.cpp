@@ -36,9 +36,8 @@ namespace toy2d {
 	}
 
 	Context::~Context() {
-
-		device.destroy();
 		
+		device.destroy();
 		instance.destroy();
 	}
 	//´´½¨instance
