@@ -7,6 +7,7 @@
 #include<optional>
 #include<functional>
 #include "swapchain.hpp"
+#include "renderProcess.hpp"
 
 
 namespace toy2d {
@@ -30,6 +31,7 @@ namespace toy2d {
 		vk::Queue presentQueue;
 		vk::SurfaceKHR surface;
 		std::unique_ptr<Swapchain> swapchain;
+		std::unique_ptr<RenderProcess> renderProcess;
 		struct  QueueFamilyIndices final
 		{
 			std::optional<uint32_t> graphicsQuene;

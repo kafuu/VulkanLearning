@@ -20,8 +20,8 @@ target_link_libraries(
 find_program(GLSLC_PROGRAM glslc REQUIRED)
 
 message(STATUS "run glslc to compile shaders ...")
-execute_process(COMMAND ${GLSLC_PROGRAM} ${CMAKE_SOURCE_DIR}/shaders/shader.vert -o ${CMAKE_SOURCE_DIR}/vert.spv)
-execute_process(COMMAND ${GLSLC_PROGRAM} ${CMAKE_SOURCE_DIR}/shaders/shader.frag -o ${CMAKE_SOURCE_DIR}/frag.spv)
+execute_process(COMMAND ${GLSLC_PROGRAM} ${CMAKE_SOURCE_DIR}/shaders/shader.vert -o ${CMAKE_SOURCE_DIR}/out/build/x64-debug/Vulkan/vert.spv)
+execute_process(COMMAND ${GLSLC_PROGRAM} ${CMAKE_SOURCE_DIR}/shaders/shader.frag -o ${CMAKE_SOURCE_DIR}/out/build/x64-debug/Vulkan/frag.spv)
 message(STATUS "compile shader OK")
 
 add_custom_target(
