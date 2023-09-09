@@ -8,6 +8,7 @@ namespace toy2d{
 		Shader::Init(ReadWholeFile("./vert.spv"), ReadWholeFile("./frag.spv"));
 		Context::GetInstance().renderProcess->InitrenderPass(); 
 		Context::GetInstance().renderProcess->InitLayout(); 
+		Context::GetInstance().swapchain->createFrameBuffers(w, h);
 		Context::GetInstance().renderProcess->InitPipline(w,h);
 	}
 	void Quit() {
