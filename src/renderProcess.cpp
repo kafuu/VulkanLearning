@@ -92,7 +92,7 @@ namespace toy2d {
 		vk::AttachmentDescription attachment;//纹理附件
 		attachment.setFormat(Context::GetInstance().swapchain->info.imageFormat.format)//纹理附件类型，需要用到swapchain一样的image
 			.setInitialLayout(vk::ImageLayout::eUndefined)//进来的布局：不管
-			.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal)//出去的布局：优化的颜色附件-因为要渲染
+			.setFinalLayout(vk::ImageLayout::ePresentSrcKHR)//出去的布局：优化的颜色附件-因为要渲染
 			.setLoadOp(vk::AttachmentLoadOp::eClear)//加载进来的操作：清空
 			.setStoreOp(vk::AttachmentStoreOp::eStore)//点绘制完怎么存储？
 			.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)//纹理附件对应的模板缓冲？

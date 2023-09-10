@@ -41,8 +41,8 @@ int main(int argc, char** argv) {
 				shouldClose = true;
 			}
 		}
+		toy2d::GetRenderer().render();
 	}
-
 	toy2d::Quit();
 
 	SDL_DestroyWindow(window);

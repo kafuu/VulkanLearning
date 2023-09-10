@@ -8,6 +8,7 @@
 #include<functional>
 #include "swapchain.hpp"
 #include "renderProcess.hpp"
+#include "renderer.hpp"
 
 
 namespace toy2d {
@@ -23,6 +24,9 @@ namespace toy2d {
 		~Context();
 		void InitSwapchain(int w ,int h);
 		void DestroySwapchain();
+		void InitRenderer() {
+			renderer.reset(new Renderer);
+		};
 
 		vk::Instance instance;
 		vk::PhysicalDevice phyDevice;//物理设备
@@ -32,6 +36,7 @@ namespace toy2d {
 		vk::SurfaceKHR surface;
 		std::unique_ptr<Swapchain> swapchain;
 		std::unique_ptr<RenderProcess> renderProcess;
+		std::unique_ptr<Renderer> renderer;
 		struct  QueueFamilyIndices final
 		{
 			std::optional<uint32_t> graphicsQuene;
@@ -42,6 +47,8 @@ namespace toy2d {
 			}
 		};
 		QueueFamilyIndices queueFamilyIndices;
+
+		
 
 
 	private:
