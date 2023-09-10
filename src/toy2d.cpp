@@ -10,8 +10,11 @@ namespace toy2d{
 		Context::GetInstance().renderProcess->InitLayout(); 
 		Context::GetInstance().swapchain->createFrameBuffers(w, h);
 		Context::GetInstance().renderProcess->InitPipline(w,h);
+		Context::GetInstance().InitRenderer();
 	}
 	void Quit() {
+		Context::GetInstance().device.waitIdle();
+		Context::GetInstance().renderer.reset();
 		Context::GetInstance().renderProcess.reset();
 		Shader::Quit();
 		Context::GetInstance().DestroySwapchain();

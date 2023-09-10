@@ -36,7 +36,7 @@ namespace toy2d {
 	}
 
 	Context::~Context() {
-		
+		vkDestroySurfaceKHR(instance, surface, nullptr);
 		device.destroy();
 		instance.destroy();
 	}
