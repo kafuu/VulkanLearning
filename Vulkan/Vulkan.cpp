@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 				shouldClose = true;
 			}
 		}
-		toy2d::GetRenderer().render();
+		toy2d::GetRenderer().drawTriangle();
 	}
 	toy2d::Quit();
 

@@ -7,17 +7,19 @@ namespace toy2d {
 	class Renderer final {
 	public:
 		vk::CommandPool commandPool;
-		vk::CommandBuffer commandBuffer;
-		vk::Fence commandAvailableFence;
-		vk::Semaphore imageAvaliable;
-		vk::Semaphore imageDrawFinish;
+		std::vector<vk::CommandBuffer> commandBuffers;
+		std::vector<vk::Fence> commandAvailableFences;
+		std::vector<vk::Semaphore> imageAvaliables;
+		std::vector<vk::Semaphore> imageDrawFinishs;
+		int maxFlightCount;
+		int currentFrame;
 
 		void InitCommandPool();
 		void allocateCommandBuffer();
-		void render();
+		void drawTriangle();
 		void createFence();
 		void createSemaphore();
-		Renderer();
+		Renderer(int maxFlightCount = 2);
 		~Renderer();
 	};
 

@@ -4,7 +4,7 @@
 
 namespace toy2d {
 
-	Renderer::Renderer() {
+	Renderer::Renderer(int maxFlightCount):maxFlightCount(maxFlightCount),currentFrame(0){
 		InitCommandPool();
 		allocateCommandBuffer();
 		createSemaphore();
@@ -12,11 +12,19 @@ namespace toy2d {
 	}
 
 	Renderer::~Renderer() {
-		Context::GetInstance().device.freeCommandBuffers(commandPool, commandBuffer);
+		Context::GetInstance().device.freeCommandBuffers(commandPool, commandBuffers[currentFrame]);
 		Context::GetInstance().device.destroyCommandPool(commandPool);
-		Context::GetInstance().device.destroySemaphore(imageAvaliable);
-		Context::GetInstance().device.destroySemaphore(imageDrawFinish);
-		Context::GetInstance().device.destroyFence(commandAvailableFence);
+		for (auto& semaphore : imageAvaliables) {
+
+			Context::GetInstance().device.destroySemaphore(semaphore);
+		}
+		for (auto& semaphore : imageDrawFinishs) {
+
+			Context::GetInstance().device.destroySemaphore(semaphore);
+		}
+		for (auto& fence : commandAvailableFences) {
+			Context::GetInstance().device.destroyFence(fence);
+		}
 	}
 
 	void Renderer::InitCommandPool() {
@@ -28,33 +36,61 @@ namespace toy2d {
 	void Renderer::allocateCommandBuffer() {
 		vk::CommandBufferAllocateInfo allocateInfo;
 		allocateInfo.setCommandPool(commandPool)
-			.setCommandBufferCount(1)
+			.setCommandBufferCount(2)
 			.setLevel(vk::CommandBufferLevel::ePrimary);//一个buffer可以控制别的commandbuffer，控制别人的就是primary
-			
-		commandBuffer = Context::GetInstance().device.allocateCommandBuffers(allocateInfo)[0];
+		
+		commandBuffers= Context::GetInstance().device.allocateCommandBuffers(allocateInfo);
+	}
+	
+	void Renderer::createFence() {
+			commandAvailableFences.resize(maxFlightCount);
+			for (auto &fence : commandAvailableFences) {
+				vk::FenceCreateInfo createInfo;
+				createInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
+				fence = Context::GetInstance().device.createFence(createInfo);
+			}
+		}
+
+	void Renderer::createSemaphore() {
+		imageAvaliables.resize(maxFlightCount);
+		imageDrawFinishs.resize(maxFlightCount);
+		for (auto& semaphore : imageAvaliables) {
+			vk::SemaphoreCreateInfo createInfo;
+			semaphore = Context::GetInstance().device.createSemaphore(createInfo);
+		}
+		for (auto& semaphore : imageDrawFinishs) {
+			vk::SemaphoreCreateInfo createInfo;
+			semaphore = Context::GetInstance().device.createSemaphore(createInfo);
+		}
 	}
 
-
 	//绘制三角形
-	void Renderer::render() {
+	void Renderer::drawTriangle() {
+		//同步
+		if (Context::GetInstance().device.waitForFences(commandAvailableFences[currentFrame], true, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
+			std::cout << "wait for fence failed" << std::endl;
+		}
+		Context::GetInstance().device.resetFences(commandAvailableFences[currentFrame]);
+
+
 		auto& device = Context::GetInstance().device;
 		auto& renderProcess = Context::GetInstance().renderProcess;
 		auto& swapchain = Context::GetInstance().swapchain;
 
 		auto result = device.acquireNextImageKHR(Context::GetInstance().swapchain->swapchain,
-			std::numeric_limits<uint64_t>::max(), imageAvaliable);
+			std::numeric_limits<uint64_t>::max(), imageAvaliables[currentFrame]);
 
 		if (result.result != vk::Result::eSuccess) {
 			std::cout << "acquire next image failed" << std::endl;
 		}
 		auto imageIndex = result.value;
 
-		commandBuffer.reset();
+		commandBuffers[currentFrame].reset();
 		
 		//开始塞命令
 		vk::CommandBufferBeginInfo beginInfo;
 		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		commandBuffer.begin(beginInfo);
+		commandBuffers[currentFrame].begin(beginInfo);
 		{
 			//1.绑定pipline
 			
@@ -69,15 +105,15 @@ namespace toy2d {
 				.setRenderArea(area)
 				.setFramebuffer(swapchain->frameBuffers[imageIndex])//找到imageIndex对应的framebuffer
 				.setClearValues(clearvalue);//clear颜色
-			commandBuffer.beginRenderPass(renderpassBeginInfo, {});
-			commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, renderProcess->pipline);
+			commandBuffers[currentFrame].beginRenderPass(renderpassBeginInfo, {});
+			commandBuffers[currentFrame].bindPipeline(vk::PipelineBindPoint::eGraphics, renderProcess->pipline);
 			{
-				//开始绘制
-				commandBuffer.draw(3, 1, 0, 0);
+				//开始绘制 
+				commandBuffers[currentFrame].draw(3, 1, 0, 0);
 			}
-			commandBuffer.endRenderPass();
+			commandBuffers[currentFrame].endRenderPass();
 		}
-		commandBuffer.end();
+		commandBuffers[currentFrame].end();
 
 		//已经把commmandbuffer塞好了，开始传gpu(图形队列)
 		vk::SubmitInfo submitInfo;
@@ -85,36 +121,26 @@ namespace toy2d {
 	vk::PipelineStageFlagBits::eBottomOfPipe
 		};
 		
-		submitInfo.setCommandBuffers(commandBuffer)
-			.setWaitSemaphores(imageAvaliable)
-			.setSignalSemaphores(imageDrawFinish)
+		submitInfo.setCommandBuffers(commandBuffers[currentFrame])
+			.setWaitSemaphores(imageAvaliables[currentFrame])
+			.setSignalSemaphores(imageDrawFinishs[currentFrame])
 			.setPWaitDstStageMask(dstStageMask);
-		Context::GetInstance().graphicsQueue.submit(submitInfo,commandAvailableFence);//fence用于cpugpu同步，防止gpu还没画完cpu就开始下一个循环了
+		Context::GetInstance().graphicsQueue.submit(submitInfo,commandAvailableFences[currentFrame]);//fence用于cpugpu同步，防止gpu还没画完cpu就开始下一个循环了
 
 		//传完了gpu开始画了，画完了就要传给显示器了(显示队列)
 		vk::PresentInfoKHR presentInfo;
 		presentInfo.setImageIndices(imageIndex)
 			.setSwapchains(swapchain->swapchain)
-			.setWaitSemaphores(imageDrawFinish);
+			.setWaitSemaphores(imageDrawFinishs[currentFrame]);
 		if (Context::GetInstance().presentQueue.presentKHR(presentInfo) != vk::Result::eSuccess) {
 			std::cout << "image present failed" << std::endl;	
 		}
 
-		//同步
-		if (Context::GetInstance().device.waitForFences(commandAvailableFence, true, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess) {
-			std::cout << "wait for fence failed" << std::endl;
+		currentFrame = (currentFrame + 1) % maxFlightCount;
+
 		}
-		Context::GetInstance().device.resetFences(commandAvailableFence);
-	}
 
-	void Renderer::createFence() {
-		vk::FenceCreateInfo createInfo;
-		commandAvailableFence = Context::GetInstance().device.createFence(createInfo);
-	}
+	
 
-	void Renderer::createSemaphore() {
-		vk::SemaphoreCreateInfo createInfo;
-		imageAvaliable = Context::GetInstance().device.createSemaphore(createInfo);
-		imageDrawFinish = Context::GetInstance().device.createSemaphore(createInfo);
-	}
+
 }
