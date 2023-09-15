@@ -2,7 +2,7 @@
 
 #include "shader.hpp"
 #include "swapchain.hpp"
-#include "context.hpp"
+#include "context.hpp" 
 
 namespace toy2d { 
 	void RenderProcess::InitPipline(int width,int height) {
@@ -10,6 +10,10 @@ namespace toy2d {
 
 		//1.顶点输入
 		vk::PipelineVertexInputStateCreateInfo vertInfo;
+		auto attribute = Vertex::GetAttribute();
+		auto binding = Vertex::GetBinding();
+		vertInfo.setVertexAttributeDescriptions (attribute)
+			.setVertexBindingDescriptions(binding);
 		createInfo.setPVertexInputState(&vertInfo);
 		
 		//2.确定顶点连成什么图元
